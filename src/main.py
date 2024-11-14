@@ -1,15 +1,16 @@
+#!/bin/python
+
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
 
 def find_text(entry, query: str) -> str:
     element = entry.find(query)
-    if element:
-        return element.text
-    else:
+    if element is None:
         return ""
+    return element.text
 
 
 def get_arxiv_entries(
@@ -18,11 +19,11 @@ def get_arxiv_entries(
     # Base URL for arXiv API
     base_url = "http://export.arxiv.org/api/query"
 
+    now = datetime.now(timezone.utc)
+
     # Calculate the date for the past day or past week
     if time_period in ["pastday", "pastweek"]:
-        query_date = (datetime.utcnow() - timedelta(days=7)).strftime(
-            "%Y%m%d%H%M"
-        )
+        query_date = (now - timedelta(days=7)).strftime("%Y%m%d%H%M")
     else:
         query_date = None
 
@@ -50,9 +51,8 @@ def get_arxiv_entries(
     # Parse the XML response
     root = ET.fromstring(response.content)
 
-    now = datetime.utcnow()
-
     entries = []
+    now = datetime.now()
 
     # Iterate through each entry in the feed
     for entry in root.findall("{http://www.w3.org/2005/Atom}entry"):
