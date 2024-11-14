@@ -4,7 +4,17 @@ from datetime import datetime, timedelta
 import requests
 
 
-def get_arxiv_entries(time_period="all", category="cs.CL", max_results=100):
+def find_text(entry, query: str) -> str:
+    element = entry.find(query)
+    if element:
+        return element.text
+    else:
+        return ""
+
+
+def get_arxiv_entries(
+    time_period: str = "all", category: str = "cs.CL", max_results: int = 100
+) -> list[dict]:
     # Base URL for arXiv API
     base_url = "http://export.arxiv.org/api/query"
 
@@ -46,10 +56,10 @@ def get_arxiv_entries(time_period="all", category="cs.CL", max_results=100):
 
     # Iterate through each entry in the feed
     for entry in root.findall("{http://www.w3.org/2005/Atom}entry"):
-        title = entry.find("{http://www.w3.org/2005/Atom}title").text
-        link = entry.find("{http://www.w3.org/2005/Atom}id").text
-        published = entry.find("{http://www.w3.org/2005/Atom}published").text
-        summary = entry.find("{http://www.w3.org/2005/Atom}summary").text
+        title = find_text(entry, "{http://www.w3.org/2005/Atom}title")
+        link = find_text(entry, "{http://www.w3.org/2005/Atom}id")
+        published = find_text(entry, "{http://www.w3.org/2005/Atom}published")
+        summary = find_text(entry, "{http://www.w3.org/2005/Atom}summary")
 
         # Filter entries by date if time_period is "pastday"
         entry_date = datetime.strptime(published, "%Y-%m-%dT%H:%M:%SZ")
@@ -59,7 +69,7 @@ def get_arxiv_entries(time_period="all", category="cs.CL", max_results=100):
         # Extract authors and affiliations
         authors = []
         for author in entry.findall("{http://www.w3.org/2005/Atom}author"):
-            name = author.find("{http://www.w3.org/2005/Atom}name").text
+            name = find_text(author, "{http://www.w3.org/2005/Atom}name")
             affiliation_elem = author.find(
                 "{http://arxiv.org/schemas/atom}affiliation"
             )
